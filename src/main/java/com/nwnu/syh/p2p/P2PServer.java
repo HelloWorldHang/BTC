@@ -1,5 +1,6 @@
 package com.nwnu.syh.p2p;
 
+import org.apache.log4j.Logger;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
@@ -13,6 +14,7 @@ import java.net.InetSocketAddress;
  */
 public class P2PServer {
     private P2PService p2pService = P2PService.getInstance();
+    Logger log = Logger.getLogger(P2PServer.class);
     /*private static P2PServer p2pServer = new P2PServer();
     private P2PServer(){
 
@@ -27,7 +29,15 @@ public class P2PServer {
 
             @Override
             public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake) {
+                log.info("服务端收到"+webSocket.getRemoteSocketAddress() + "的连接请求-------");
                 p2pService.getSockets().add(webSocket);
+                log.info("服务端时间：" + System.currentTimeMillis());
+                log.info("服务端共连接了几个socket-----------------");
+                for (WebSocket socket : p2pService.getSockets()) {
+                    log.info(socket.getRemoteSocketAddress());
+                }
+                log.info("sockets-------------------");
+                log.info("服务端open函数结束------------------------");
             }
 
             @Override
@@ -52,6 +62,7 @@ public class P2PServer {
 
             }
         };
+        socketServer.setConnectionLostTimeout(1000*600);
         socketServer.start();
     }
 

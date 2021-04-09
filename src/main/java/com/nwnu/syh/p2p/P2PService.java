@@ -5,8 +5,15 @@ import com.nwnu.syh.bean.Block;
 import com.nwnu.syh.bean.Transaction;
 import com.nwnu.syh.bean.Wallet;
 import com.nwnu.syh.service.BlockService;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.log4j.Logger;
+import org.java_websocket.AbstractWebSocket;
 import org.java_websocket.WebSocket;
+import org.java_websocket.WebSocketImpl;
+import org.java_websocket.client.WebSocketClient;
 
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -22,6 +29,7 @@ public class P2PService {
     // 初始化为空
     private static List<WebSocket> sockets = new ArrayList<>();
     private static BlockService blockService = BlockService.getInstance();
+    Logger log = Logger.getLogger(P2PClient.class);
     private P2PService(){
 
     }
@@ -49,6 +57,10 @@ public class P2PService {
     public final static int RESPONSE_WALLET = 8;
     // 返回最后一个块
     public final static int RESPONSE_LATEST_BLOCK = 9;
+    // 请求所连接服务端的所有socket连接
+    public final static int QUERY_SOCKETS = 10;
+    // 返回本节点的所有socket连接
+    public final static int RESPONSE_SOCKETS = 11;
 
     public List<WebSocket> getSockets() {
         return sockets;
@@ -75,6 +87,12 @@ public class P2PService {
                 break;
             case QUERY_WALLET:
                 write(webSocket, responseWallets());
+                break;
+            case QUERY_SOCKETS:
+                write(webSocket, responseSockets(webSocket));
+                break;
+            case RESPONSE_SOCKETS:
+                handleSocketsResponse(message.getData());
                 break;
             case RESPONSE_BLOCKCHAIN:
                 handleBlockChainResponse(message.getData(), sockets);
@@ -128,7 +146,7 @@ public class P2PService {
                 System.out.println("将接收到的区块加入到本地的区块");
                 if (blockService.addBlock(latestBlockReceived)){
                     // 向连接自己的节点广播
-                    broatcast(responseLatestBlockMsg());
+//                    broatcast(responseLatestBlockMsg());
                 }
             }else{
                 // 用长链替换本地的短链
@@ -149,7 +167,7 @@ public class P2PService {
                 System.out.println("将接收到的最后一个区块加入到本地的区块链");
                 if (blockService.addBlock(latestBlock)){
                     // 向连接自己的节点广播
-                    broatcast(responseLatestBlockMsg());
+//                    broatcast(responseLatestBlockMsg());
                 }
             }else{// 进行整条链的同步，选择最长的链同步
                 System.out.println("查询所有通讯节点上的区块链，并选择最长的同步");
@@ -171,6 +189,22 @@ public class P2PService {
         });
     }
 
+    public void handleSocketsResponse(String msg){
+        log.info("接收到的信息：" + msg);
+        List<InetSocketAddress> listAddr = JSON.parseArray(msg, InetSocketAddress.class);
+        if (CollectionUtils.isNotEmpty(listAddr)){
+            for (InetSocketAddress addr : listAddr) {
+                P2PClient.connectOtherPeer("ws://" + addr.getHostName() + ":" + addr.getPort());
+            }
+        }
+
+        log.info("接收到服务端的所有addr---------------" + listAddr);
+        for (InetSocketAddress addr : listAddr) {
+            log.info(addr.getAddress() + "-----------" + addr.getPort());
+        }
+        log.info("接收到服务端的所有addr---------------");
+    }
+
     public String queryLatestBlockMsg() {
         return JSON.toJSONString(new Message(QUERY_LATEST_BLOCK));
     }
@@ -189,6 +223,26 @@ public class P2PService {
 
     public String queryWalletMsg(){
         return JSON.toJSONString(new Message(QUERY_WALLET));
+    }
+
+    public String querySockets(){
+        return JSON.toJSONString(new Message(QUERY_SOCKETS));
+    }
+
+    public String responseSockets(WebSocket webSocket){
+        List<InetSocketAddress> list = new ArrayList<>();
+        // TODO
+        // 打印一下相应信息
+        log.info("服务端响应:" + p2pService.getSockets());
+        log.info("请求来自：" + webSocket.getRemoteSocketAddress().getPort());
+        for (WebSocket socket : p2pService.getSockets()) {
+            if (socket.getRemoteSocketAddress().getPort() != webSocket.getRemoteSocketAddress().getPort()){
+                log.info(socket.getRemoteSocketAddress());
+                InetSocketAddress remoteSocketAddress = socket.getRemoteSocketAddress();
+                list.add(remoteSocketAddress);
+            }
+        }
+        return JSON.toJSONString(new Message(RESPONSE_SOCKETS, JSON.toJSONString(list)));
     }
 
     public String responsePackedTransaction() {
