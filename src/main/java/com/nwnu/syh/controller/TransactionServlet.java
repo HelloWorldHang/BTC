@@ -54,7 +54,7 @@ public class TransactionServlet {
     @RequestMapping(value = "/unpacked.do")
     public String getUnpackedTransaction(){
         List<Transaction> allTransactions = new ArrayList<>(blockService.getAllTransactions());
-        allTransactions.removeAll(blockService.getPackedTransactions());
+        boolean res = allTransactions.removeAll(blockService.getPackedTransactions());
         return JSON.toJSONString(allTransactions);
     }
 

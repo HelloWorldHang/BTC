@@ -15,6 +15,7 @@ import java.util.*;
  */
 public class BlockService {
     private static BlockService blockService = new BlockService();
+    private static P2PService p2pService = P2PService.getInstance();
     /**
      * 区块链存储结构
      */
@@ -102,13 +103,12 @@ public class BlockService {
             blockChain.add(newBlock);
             // 新区块的交易要加入已打包交易中
             packedTransactions.addAll(newBlock.getTransactions());
-            /*// 所有交易中加入系统交易
+            // 所有交易中加入系统交易
             newBlock.getTransactions().forEach(tx -> {
                 if (tx.coinbaseTx()){
-                    Transaction sysTx = tx;
-                    allTransactions.add(sysTx);
+                    allTransactions.add(tx);
                 }
-            });*/
+            });
             return true;
         }
         return false;
@@ -206,9 +206,10 @@ public class BlockService {
     public Block mine(String toAddress){
         // 创建系统奖励的交易
         Transaction sysTx = newCoinbaseTx(toAddress);
-        allTransactions.add(sysTx);
+//        allTransactions.add(sysTx);
         // 对所有交易进行一个复制
         List<Transaction> blockTxs = new ArrayList<>(allTransactions);
+        blockTxs.add(sysTx);
         // 去除已打包进区块的交易
         blockTxs.removeAll(packedTransactions);
         // 验证所有未打包交易
@@ -356,13 +357,18 @@ public class BlockService {
     public void replaceChain(List<Block> newBlocks) {
         if (isValidChain(newBlocks) && newBlocks.size() > blockChain.size()){
             blockChain = newBlocks;
-            packedTransactions.clear();
+            // 同步所有交易
+            p2pService.write(p2pService.getSockets().get(0), p2pService.queryTransactionMsg());
+            // 同步已打包交易
+            p2pService.write(p2pService.getSockets().get(0), p2pService.queryPackedTransactionMsg());
+
+            /*packedTransactions.clear();
             blockChain.forEach(block -> {
                 packedTransactions.addAll(block.getTransactions());
-            });
+            });*/
             // 再做一个请求，请求所有交易
-            allTransactions.clear();
-            allTransactions.addAll(packedTransactions);
+            /*allTransactions.clear();
+            allTransactions.addAll(packedTransactions);*/
         }else {
             System.out.println("接受的区块链无效");
         }

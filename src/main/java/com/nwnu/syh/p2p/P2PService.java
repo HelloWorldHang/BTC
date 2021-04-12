@@ -116,8 +116,8 @@ public class P2PService {
     }
 
     public void handlePackedTransactionResponse(String msg) {
-        List<Transaction> unpacked = JSON.parseArray(msg, Transaction.class);
-        blockService.getPackedTransactions().addAll(unpacked);
+        List<Transaction> packed = JSON.parseArray(msg, Transaction.class);
+        blockService.getPackedTransactions().addAll(packed);
     }
 
     /**

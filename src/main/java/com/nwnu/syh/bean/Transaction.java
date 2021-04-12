@@ -4,6 +4,8 @@ import com.alibaba.fastjson.JSON;
 import com.nwnu.syh.security.CryptoUtil;
 import com.nwnu.syh.security.RSACoder;
 
+import java.util.Objects;
+
 /**
  * @description: *
  * @author: 司云航
@@ -25,6 +27,25 @@ public class Transaction {
         this.id = id;
         this.txIn = txIn;
         this.txOut = txOut;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o){
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()){
+            return false;
+        }
+        Transaction that = (Transaction) o;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(txIn, that.txIn) &&
+                Objects.equals(txOut, that.txOut);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, txIn, txOut);
     }
 
     public String getId() {

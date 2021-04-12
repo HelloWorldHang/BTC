@@ -35,10 +35,7 @@ public class P2PClient {
                     log.info("客户端请求" + this.getRemoteSocketAddress() + "建立连接--------------");
                     // 请求最后一个区块，若最后一个区块index大于本地最后一个区块index则请求整条区块链进行同步
                     p2pService.write(this, p2pService.queryLatestBlockMsg());
-                    // 同步所有交易
-                    //p2pService.write(this, p2pService.queryTransactionMsg());
-                    // 同步已打包交易
-                    //p2pService.write(this, p2pService.queryPackedTransactionMsg());
+
                     p2pService.write(this, p2pService.queryWalletMsg());
 //                     System.out.println("client-----" + p2pService.queryWalletMsg());
                     p2pService.getSockets().add(this);
@@ -106,6 +103,7 @@ public class P2PClient {
                     System.out.println("onError-----------connection failed");
                 }
             };
+            socketClient.setConnectionLostTimeout(1000*600);
             socketClient.connect();
         }catch (URISyntaxException e) {
             e.printStackTrace();

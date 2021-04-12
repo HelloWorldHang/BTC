@@ -1,5 +1,7 @@
 package com.nwnu.syh.bean;
 
+import java.util.Objects;
+
 /**
  * @description: *
  * @author: 司云航
@@ -23,6 +25,26 @@ public class TransactionInput {
         this.value = value;
         this.signature = signature;
         this.publicKey = publicKey;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o){
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()){
+            return false;
+        }
+        TransactionInput that = (TransactionInput) o;
+        return value == that.value &&
+                Objects.equals(txId, that.txId) &&
+                Objects.equals(signature, that.signature) &&
+                Objects.equals(publicKey, that.publicKey);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(txId, value, signature, publicKey);
     }
 
     public String getTxId() {
